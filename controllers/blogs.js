@@ -28,11 +28,17 @@ router.post("/", tokenExtractor, async (req, res, next) => {
   }
 });
 
-router.delete("/:id", blogFinder, async (req, res, next) => {
+router.delete("/:id", blogFinder, tokenExtractor, async (req, res, next) => {
   try {
     if (req.blog) {
-      await req.blog.destroy();
-      res.status(204).end();
+      const user = await User.findByPk(req.decodedToken.id)
+      if (req.blog.userId === user.id) {
+        await req.blog.destroy();
+        res.status(204).end();
+      } else {
+        res.status(401).json({ error: "Not authorized to delete blog post" })
+      }
+
     } else {
       res.status(404).json({ error: "Blog not found" });
     }
