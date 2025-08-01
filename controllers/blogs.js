@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const { Op } = require("sequelize")
+const { Op } = require("sequelize");
 
 const { Blog, User } = require("../models");
 const blogFinder = require("../middleware/blogFinder");
@@ -10,20 +10,28 @@ router.get("/", async (req, res, next) => {
   const where = {};
 
   if (req.query.search) {
-    console.log("Search query: ", req.query.search)
-    where.title = {
-      [Op.substring]: req.query.search
-    }
+    where[Op.or] = [
+      {
+        title: {
+          [Op.substring]: req.query.search,
+        },
+      },
+      {
+        author: {
+          [Op.substring]: req.query.search,
+        },
+      },
+    ];
   }
 
   try {
     const blogs = await Blog.findAll({
-      attributes: { exclude: ["userId"]},
+      attributes: { exclude: ["userId"] },
       include: {
         model: User,
-        attributes: ["name"]
+        attributes: ["name"],
       },
-      where
+      where,
     });
     res.json(blogs);
   } catch (error) {
@@ -48,14 +56,13 @@ router.post("/", tokenExtractor, async (req, res, next) => {
 router.delete("/:id", blogFinder, tokenExtractor, async (req, res, next) => {
   try {
     if (req.blog) {
-      const user = await User.findByPk(req.decodedToken.id)
+      const user = await User.findByPk(req.decodedToken.id);
       if (req.blog.userId === user.id) {
         await req.blog.destroy();
         res.status(204).end();
       } else {
-        res.status(401).json({ error: "Not authorized to delete blog post" })
+        res.status(401).json({ error: "Not authorized to delete blog post" });
       }
-
     } else {
       res.status(404).json({ error: "Blog not found" });
     }
