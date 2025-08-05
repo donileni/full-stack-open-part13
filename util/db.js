@@ -10,7 +10,7 @@ const connectToDatabase = async () => {
     await runMigrations();
     console.log("connected to the db");
   } catch (error) {
-    console.log("failed to connect to db");
+    console.log("failed to connect to db: ", error);
     return process.exit(1);
   }
 
